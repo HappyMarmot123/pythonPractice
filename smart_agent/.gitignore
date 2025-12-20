@@ -1,0 +1,36 @@
+# 환경 변수
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# 가상환경
+venv/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 데이터 및 벡터 DB
+data/db/
+data/*.pdf
+!data/.gitkeep
+
+# Streamlit
+.streamlit/
+
+# 기타
+.DS_Store
+*.log
+
