@@ -9,6 +9,7 @@ from langgraph.prebuilt import ToolNode
 from langgraph.graph.message import add_messages
 
 from core.tools import tools
+from core.code_tools import code_tools
 
 class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], add_messages]
@@ -27,6 +28,43 @@ class SmartRAGAgent:
     def _build_graph(self):
         self.workflow.add_node("agent", self.agent_node)
         self.workflow.add_node("tools", ToolNode(tools))
+        self.workflow.set_entry_point("agent")
+        self.workflow.add_conditional_edges(
+            "agent",
+            self.should_continue,
+            {
+                "continue": "tools",
+                "end": END
+            }
+        )
+        self.workflow.add_edge("tools", "agent")
+        self.app = self.workflow.compile()
+
+    def agent_node(self, state: AgentState):
+        messages = state["messages"]
+        response = self.llm_with_tools.invoke(messages)
+        return {"messages": [response]}
+
+    def should_continue(self, state: AgentState) -> str:
+        last_message = state["messages"][-1]
+        if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+            return "continue"
+        return "end"
+
+class CodeGeneratorAgent:
+    def __init__(self):
+        self.llm = ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            temperature=0.3,  # 코드 생성에는 약간의 창의성 허용
+            google_api_key=os.getenv("GEMINI_API_KEY")
+        )
+        self.llm_with_tools = self.llm.bind_tools(code_tools)
+        self.workflow = StateGraph(AgentState)
+        self._build_graph()
+
+    def _build_graph(self):
+        self.workflow.add_node("agent", self.agent_node)
+        self.workflow.add_node("tools", ToolNode(code_tools))
         self.workflow.set_entry_point("agent")
         self.workflow.add_conditional_edges(
             "agent",
