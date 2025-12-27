@@ -3,7 +3,7 @@ AI 에이전트 팩토리 모듈
 다양한 AI 타입에 맞는 에이전트를 생성합니다.
 """
 from enum import Enum
-from core.agent import SmartRAGAgent, CodeGeneratorAgent
+from core.agent import SmartRAGAgent, CodeGeneratorAgent, VideoQAAgent
 
 class AgentType(str, Enum):
     """사용 가능한 AI 에이전트 타입"""
@@ -32,8 +32,7 @@ class AgentFactory:
             case AgentType.CODE_GENERATOR:
                 return CodeGeneratorAgent()
             case AgentType.VIDEO_QA:
-                # TODO: 영상 Q&A 에이전트 구현
-                raise NotImplementedError("영상 Q&A 에이전트는 아직 구현되지 않았습니다.")
+                return VideoQAAgent()
             case _:
                 raise ValueError(f"알 수 없는 에이전트 타입: {agent_type}")
     
@@ -61,7 +60,7 @@ class AgentFactory:
             },
             AgentType.VIDEO_QA: {
                 "name": "영상 Q&A 비서",
-                "description": "영상 내용을 분석하여 질문에 답변합니다.",
+                "description": "유튜브 영상을 다운로드하고 요약하여 질문에 답변합니다.",
                 "icon": "🎥"
             }
         }

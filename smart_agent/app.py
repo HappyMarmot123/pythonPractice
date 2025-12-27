@@ -4,6 +4,8 @@ from langchain_core.messages import HumanMessage, AIMessage
 from core.agent_factory import AgentFactory, AgentType
 import uuid
 from datetime import datetime
+from pathlib import Path
+import re
 
 load_dotenv()
 
@@ -217,6 +219,65 @@ elif st.session_state.current_chat_id:
         st.title(f"{agent_info['icon']} {agent_info['name']}")
         st.caption(agent_info['description'])
         
+        # 영상 Q&A 에이전트인 경우 유튜브 링크 입력 섹션 추가
+        if agent_type == AgentType.VIDEO_QA:
+            st.markdown("---")
+            st.subheader("📹 유튜브 영상 링크")
+            
+            # 세션 상태 초기화
+            if "youtube_url" not in st.session_state:
+                st.session_state.youtube_url = {}
+            if "youtube_summary" not in st.session_state:
+                st.session_state.youtube_summary = {}
+            
+            # 유튜브 링크 입력
+            youtube_link = st.text_input(
+                "유튜브 영상 URL을 입력하세요",
+                value=st.session_state.youtube_url.get(st.session_state.current_chat_id, ""),
+                key=f"youtube_input_{st.session_state.current_chat_id}",
+                placeholder="예: https://www.youtube.com/watch?v=VIDEO_ID 또는 https://youtu.be/VIDEO_ID"
+            )
+            
+            if youtube_link:
+                st.session_state.youtube_url[st.session_state.current_chat_id] = youtube_link
+                
+                # URL 검증
+                youtube_pattern = r'(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})'
+                if re.search(youtube_pattern, youtube_link):
+                    st.success(f"✅ 유튜브 링크가 입력되었습니다")
+                    
+                    # 영상 요약 버튼
+                    if st.button("📝 영상 요약 생성", key=f"summarize_{st.session_state.current_chat_id}", use_container_width=True):
+                        with st.spinner("영상을 다운로드하고 분석 중... (시간이 걸릴 수 있습니다)"):
+                            from core.video_tools import summarize_youtube_video
+                            summary = summarize_youtube_video.invoke({"youtube_url": youtube_link})
+                            
+                            if "오류" in summary or "실패" in summary or "너무 큽니다" in summary:
+                                st.error(summary)
+                            else:
+                                st.markdown("### 📝 영상 요약")
+                                st.markdown(summary)
+                                st.session_state.youtube_summary[st.session_state.current_chat_id] = summary
+                                st.success("✅ 영상 요약이 완료되었습니다. 이제 질문을 할 수 있습니다!")
+                else:
+                    st.error("❌ 유효하지 않은 유튜브 URL입니다. 올바른 형식의 URL을 입력해주세요.")
+            
+            # 현재 입력된 유튜브 링크 표시
+            if st.session_state.current_chat_id in st.session_state.youtube_url:
+                youtube_link = st.session_state.youtube_url[st.session_state.current_chat_id]
+                if youtube_link:
+                    # 비디오 ID 추출
+                    youtube_pattern = r'(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})'
+                    match = re.search(youtube_pattern, youtube_link)
+                    if match:
+                        video_id = match.group(1)
+                        st.info(f"📹 현재 영상: https://www.youtube.com/watch?v={video_id}")
+                        
+                        if st.session_state.current_chat_id in st.session_state.youtube_summary:
+                            st.success("✅ 요약 완료 - 질문을 입력하세요!")
+            
+            st.markdown("---")
+        
         # 현재 채팅의 메시지 표시
         current_messages = get_current_messages()
         
@@ -239,7 +300,7 @@ if st.session_state.current_chat_id and not st.session_state.show_agent_selectio
             placeholder_text = {
                 AgentType.WEB_SEARCH: "무엇이든 물어보세요 (예: 오늘 삼성전자 주가는?, 최신 AI 트렌드는?)",
                 AgentType.CODE_GENERATOR: "코드 생성 요청을 입력하세요 (예: Python으로 웹 크롤러 만들어줘)",
-                AgentType.VIDEO_QA: "영상에 대한 질문을 입력하세요"
+                AgentType.VIDEO_QA: "유튜브 영상에 대한 질문을 입력하세요 (예: 이 영상의 주요 내용은?, 핵심 메시지는?)"
             }.get(AgentType(chat_data["agent_type"]), "무엇이든 물어보세요")
             
             if prompt := st.chat_input(placeholder_text):
