@@ -167,7 +167,8 @@ if st.session_state.show_agent_selection or st.session_state.current_chat_id is 
     available_agents = [
         AgentType.WEB_SEARCH,
         AgentType.CODE_GENERATOR,
-        AgentType.VIDEO_QA
+        AgentType.VIDEO_QA,
+        AgentType.PERSONA_CHATBOT
     ]
     
     # AI 타입별 카드 표시
@@ -300,7 +301,8 @@ if st.session_state.current_chat_id and not st.session_state.show_agent_selectio
             placeholder_text = {
                 AgentType.WEB_SEARCH: "무엇이든 물어보세요 (예: 오늘 삼성전자 주가는?, 최신 AI 트렌드는?)",
                 AgentType.CODE_GENERATOR: "코드 생성 요청을 입력하세요 (예: Python으로 웹 크롤러 만들어줘)",
-                AgentType.VIDEO_QA: "유튜브 영상에 대한 질문을 입력하세요 (예: 이 영상의 주요 내용은?, 핵심 메시지는?)"
+                AgentType.VIDEO_QA: "유튜브 영상에 대한 질문을 입력하세요 (예: 이 영상의 주요 내용은?, 핵심 메시지는?)",
+                AgentType.PERSONA_CHATBOT: "트럼프 대통령 말투로 대화해보세요!"
             }.get(AgentType(chat_data["agent_type"]), "무엇이든 물어보세요")
             
             if prompt := st.chat_input(placeholder_text):

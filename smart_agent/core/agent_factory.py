@@ -3,13 +3,14 @@ AI 에이전트 팩토리 모듈
 다양한 AI 타입에 맞는 에이전트를 생성합니다.
 """
 from enum import Enum
-from core.agent import SmartRAGAgent, CodeGeneratorAgent, VideoQAAgent
+from core.agent import SmartRAGAgent, CodeGeneratorAgent, VideoQAAgent, PersonaAgent
 
 class AgentType(str, Enum):
     """사용 가능한 AI 에이전트 타입"""
     WEB_SEARCH = "web_search"  # 웹 검색 기반 RAG 에이전트
     CODE_GENERATOR = "code_generator"  # 코드 생성 및 실시간 프리뷰 에이전트
     VIDEO_QA = "video_qa"  # 영상 기반 Q&A 비서
+    PERSONA_CHATBOT = "persona_chatbot"  # 페르소나 기반 챗봇
     # 향후 추가될 AI 타입들...
 
 class AgentFactory:
@@ -33,6 +34,8 @@ class AgentFactory:
                 return CodeGeneratorAgent()
             case AgentType.VIDEO_QA:
                 return VideoQAAgent()
+            case AgentType.PERSONA_CHATBOT:
+                return PersonaAgent(persona_name="트럼프")
             case _:
                 raise ValueError(f"알 수 없는 에이전트 타입: {agent_type}")
     
@@ -62,6 +65,11 @@ class AgentFactory:
                 "name": "영상 Q&A 비서",
                 "description": "유튜브 영상을 다운로드하고 요약하여 질문에 답변합니다.",
                 "icon": "🎥"
+            },
+            AgentType.PERSONA_CHATBOT: {
+                "name": "트럼프 페르소나 챗봇",
+                "description": "트럼프 대통령의 말투로 대화하는 페르소나 챗봇입니다.",
+                "icon": "🎭"
             }
         }
         return agent_info.get(agent_type, {
